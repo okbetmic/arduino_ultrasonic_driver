@@ -26,7 +26,7 @@ volatile unsigned long long pre_millis;
 #define LIMIT_SIZE 1
 
 #define MODE_SIZE 3 //размер символов режима
-#define F_SIZE 3 //размер текста частоты
+#define F_SIZE 2 //размер текста частоты
 
 #define MODE_L 7  //расстояние между номерами
 #define MODE_HEIGHT 10 //расстояние от нижней точки значеня частоты до прямой, на которой лежит строка режимов
@@ -103,12 +103,11 @@ ISR (TIMER2_COMPA_vect) {
 
 void loop() {
   //Serial.println(tic);
-  /*if (old_f != tic)
-    freq_out(tic);*/
-  for(long int i = 0; i < 1000000; i+=99 + 0.01 * i){  
-    freq_out(i);
+  if (old_f != tic)
+    freq_out(tic);
+ 
     delay(OUT_T);
-  }
+  
 
 }
 
@@ -260,6 +259,8 @@ void initialization() {
   }
   
   tft.text(hz, (F_SIZE * 5 + FREQ_SIGN_SPACE) * freq.length() + HZ_SPACE, 0);
+
+  old_f = tic;
 
 
   tft.setTextSize(MODE_SIZE);
