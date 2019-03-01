@@ -13,24 +13,32 @@ volatile int mode_out = 4;//начальный режим работы
 
 long int old_f;
 
+#ifdef CHECK
+long int f_now;
+#endif
+
 volatile int pre_mode_out = mode_out;
 volatile unsigned long long pre_millis;
 
-#define freq_color  0, 255, 255
+#define background_color  0, 0, 0
+#define freq_color  255, 255, 255
 #define mode_count_color  0, 0, 255
 #define change_mode_count_color  0, 255, 0
-#define background_color  0, 0, 0
+#define limit_color 255, 0, 0
+#define string_color 240, 230, 140
 
 #define FREQ_X_SPACE 10
 #define FREQ_Y_SPACE 10
 #define FREQ_SIGN_SPACE 3 //расстояние между знаками в выводе частоты
 #define HZ_SPACE 10 // расстояние между значением частоты и "Hz"
-#define BOUNCE_DELAY_TIME 30 //время задержки на считывании кнопок (от дребезжания)
-#define LIMIT_SPACE 20 //расстояние между строкой режимов и лимитами
+#define BOUNCE_DELAY_TIME 50 //время задержки на считывании кнопок (от дребезжания)
+#define LIMIT_SPACE 10 //расстояние между строкой режимов и лимитами
+#define STRING_SPACE 10
 
 #define LIMIT_SIZE 1 //размер лимитов
 #define MODE_SIZE 3 //размер символов режима
 #define F_SIZE 2 //размер символов частоты
+#define STRING_SIZE 30
 
 #define MODE_L 7  //расстояние между номерами
 #define MODE_SPACE 10 //расстояние от нижней точки значеня частоты до прямой, на которой лежит строка режимов
@@ -46,14 +54,14 @@ volatile unsigned long long pre_millis;
 #define buttonOne 2
 #define buttonTwo 3
 
-int limit[7][2] = {
-  {690, 3700},
-  {1150, 6200},
-  {2800, 15000},
-  {6700, 36000},
-  {20000, 100000},
-  {62000, 293000},
-  {119000, 340000}
+long int limit[7][2] = {
+  {777, 4575},
+  {1114, 6510},
+  {2835, 16574},
+  {6262, 36284},
+  {18955, 106402},
+  {57980, 299410},
+  {109925, 340000}
 };
 
 
@@ -110,12 +118,23 @@ void loop() {
     freq_out(tic);
 
 #ifdef CHECK
-  for(long int i = 0; i < 1000000; i+= 1 + 0.01*i){
+  int pmo = pre_mode_out;
+  for(long int i = limit[mode_out - 1][0]; i < limit[mode_out - 1][1]; i+= 0.01*i){
+      if(pmo!= pre_mode_out){
+        break;
+        stringClear();
+      }  
+      f_now = i;
       freq_out(i);
       delay(OUT_T);
   }    
 
-  for(long int i = 1000000; i > 0; i-= 1 + 0.01*i){
+  for(long int i = limit[mode_out - 1][1]; i > limit[mode_out - 1][0]; i-= 0.01*i){
+      if(pmo!= pre_mode_out){
+        break;
+        stringClear();
+      } 
+      f_now = i;
       freq_out(i);
       delay(OUT_T);
   } 
@@ -123,6 +142,37 @@ void loop() {
     
   delay(OUT_T);
 }
+
+void initialization() {
+  tft.background(background_color);
+  tft.setTextSize(F_SIZE);
+
+  String freq = get_f(tic);
+
+  for (int i = 0; i < freq.length(); i++)
+    freq_writing(freq_color, freq[i], i);
+  
+  hz_writing(freq_color, freq.length());;
+
+  old_f = tic;
+
+
+  tft.setTextSize(MODE_SIZE);
+  tft.stroke(mode_count_color);
+  for (int i = 1; i <= MAX_MODE; i++) {
+    String out = String(i);
+    tft.text(out.c_str(), (i - 1) * (5 * MODE_SIZE) + MODE_L * i, F_SIZE * 8 + MODE_SPACE + FREQ_Y_SPACE);
+  }
+
+  String out = String(mode_out);
+  tft.stroke(change_mode_count_color);
+  tft.text(out.c_str(), (mode_out - 1) * (5 * MODE_SIZE) + MODE_L * mode_out, F_SIZE * 8 + MODE_SPACE + FREQ_Y_SPACE);
+
+  limitsOut();
+  stringClear();
+  stringOut();
+}
+
 
 String get_f(long int f){
   if(String(f).length() > 3)
@@ -171,6 +221,8 @@ void freq_out(long int f) {
     hz_writing(freq_color, freq.length());
   }
 
+  stringOut();
+  
   old_f = f;
 }
 
@@ -194,9 +246,10 @@ void mode_down() {
     initialization();
 
   if (millis() - pre_millis > BOUNCE_DELAY_TIME) {
-    if (mode_out > MIN_MODE)
+    if (mode_out > MIN_MODE){
       mode_out--;
-    modeOut();
+      modeOut();
+    }
 
     pre_mode_out = mode_out;
     pre_millis = millis();
@@ -208,22 +261,24 @@ void mode_up() {
     initialization();
 
   if (millis() - pre_millis > BOUNCE_DELAY_TIME) {
-    if (mode_out < MAX_MODE)
+    if (mode_out < MAX_MODE){
       mode_out++;
-    modeOut();
+      modeOut();
+    }
     pre_mode_out = mode_out;
     pre_millis = millis();
   }
 }
 
 void modeOut() {
+  limitsOut();
+  
   tft.setTextSize(MODE_SIZE);
   tft.stroke(background_color);
   
   String out = String(pre_mode_out);
   tft.stroke(mode_count_color);
   tft.text(out.c_str(), (pre_mode_out - 1) * (5 * MODE_SIZE) + MODE_L * pre_mode_out, F_SIZE * 8 + MODE_SPACE + FREQ_Y_SPACE);
-  tft.stroke(change_mode_count_color);
 
   int num = 1 << (mode_out - 1);
   out = String(mode_out);
@@ -238,32 +293,68 @@ void modeOut() {
   shiftOut(dataPin, clockPin, LSBFIRST, num);
   digitalWrite(latchPin, HIGH);
 
+  tft.stroke(change_mode_count_color);
   tft.text(out.c_str(), (mode_out - 1) * (5 * MODE_SIZE) + MODE_L * mode_out, F_SIZE * 8 + MODE_SPACE + FREQ_Y_SPACE);
+
+  stringClear();
 }
 
 
-void initialization() {
-  tft.background(background_color);
-  tft.setTextSize(F_SIZE);
-
-  String freq = get_f(tic);
-
-  for (int i = 0; i < freq.length(); i++)
-    freq_writing(freq_color, freq[i], i);
+void limitsOut(){
+  tft.setTextSize(LIMIT_SIZE);
   
-  hz_writing(freq_color, freq.length());;
+  tft.stroke(background_color);
+  tft.text(String(limit[pre_mode_out - 1][0]).c_str(), 0, F_SIZE * 8 + MODE_SPACE + FREQ_Y_SPACE + MODE_SIZE * 8 + LIMIT_SPACE);
+  tft.stroke(limit_color);
+  tft.text(String(limit[mode_out - 1][0]).c_str(), 0, F_SIZE * 8 + MODE_SPACE + FREQ_Y_SPACE + MODE_SIZE * 8 + LIMIT_SPACE);
+  
+  tft.stroke(background_color);
+  tft.text(String(limit[pre_mode_out - 1][1]).c_str(), tft.width() - String(limit[pre_mode_out - 1][1]).length() * LIMIT_SIZE * (5+1), F_SIZE * 8 + MODE_SPACE + FREQ_Y_SPACE + MODE_SIZE * 8 + LIMIT_SPACE);
+  tft.stroke(limit_color);
+  tft.text(String(limit[mode_out - 1][1]).c_str(), tft.width() - String(limit[mode_out - 1][1]).length() * LIMIT_SIZE * (5+1), F_SIZE * 8 + MODE_SPACE + FREQ_Y_SPACE + MODE_SIZE * 8 + LIMIT_SPACE);
+}
 
-  old_f = tic;
+void stringOut(){
+  long int f = tic;
+  long int pre_f = old_f;
+  int y = F_SIZE * 8 + MODE_SPACE + FREQ_Y_SPACE + MODE_SIZE * 8 + LIMIT_SPACE + STRING_SPACE;
+#ifdef CHECK
+  f = f_now;
+#endif
 
+  if(f > limit[mode_out - 1][1]) f = limit[mode_out - 1][1];
+  if(f < limit[mode_out - 1][0]) f = limit[mode_out - 1][0];
+  if(pre_f > limit[mode_out - 1][1]) pre_f = limit[mode_out - 1][1];
+  if(pre_f < limit[mode_out - 1][0]) pre_f = limit[mode_out - 1][0];
 
-  tft.setTextSize(MODE_SIZE);
-  tft.stroke(mode_count_color);
-  for (int i = 1; i <= MAX_MODE; i++) {
-    String out = String(i);
-    tft.text(out.c_str(), (i - 1) * (5 * MODE_SIZE) + MODE_L * i, F_SIZE * 8 + MODE_SPACE + FREQ_Y_SPACE);
+  long int map_f = map(f, limit[mode_out - 1][0], limit[mode_out - 1][1], 0, tft.width());
+  long int map_pre_f = map(pre_f, limit[mode_out - 1][0], limit[mode_out - 1][1], 0, tft.width());
+
+  if(map_f > map_pre_f){
+    tft.fill(string_color);
+    tft.noStroke();
+    tft.rect(0, y, map_f, STRING_SIZE);
   }
+  if(map_f < map_pre_f){
+    tft.fill(background_color);
+    tft.noStroke();
+    tft.rect(map_f, y, map_pre_f - map_f, STRING_SIZE);
+  }
+}
 
-  String out = String(mode_out);
-  tft.stroke(change_mode_count_color);
-  tft.text(out.c_str(), (mode_out - 1) * (5 * MODE_SIZE) + MODE_L * mode_out, F_SIZE * 8 + MODE_SPACE + FREQ_Y_SPACE);
+void stringClear(){
+  int y = F_SIZE * 8 + MODE_SPACE + FREQ_Y_SPACE + MODE_SIZE * 8 + LIMIT_SPACE + STRING_SPACE;
+  long int map_f = map(tic, limit[mode_out - 1][0], limit[mode_out - 1][1], 0, tft.width());
+
+#ifdef CHECK
+  map_f = map(f_now, limit[mode_out - 1][0], limit[mode_out - 1][1], 0, tft.width());
+#endif
+  
+  tft.fill(background_color);
+  tft.noStroke();
+  tft.rect(0, y, tft.width(), STRING_SIZE);
+
+  tft.fill(string_color);
+  tft.noStroke();
+  tft.rect(0, y, map_f, STRING_SIZE);
 }
