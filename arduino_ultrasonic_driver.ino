@@ -68,6 +68,7 @@ long int limit[7][2] = {
 TFT tft = TFT(CS, DC, RESET);
 
 void setup() {
+  delay(1000); //время наподумать
   //Serial.begin(9600);
   pinMode (5, INPUT); // вход сигнала T1 (only для atmega328)
 
@@ -85,6 +86,13 @@ void setup() {
   pinMode(buttonTwo, INPUT_PULLUP);
 
   int num = 1 << (mode_out - 1);
+  out = String(mode_out);
+
+  if (mode_out == 4)
+    num = 1 << (4);
+
+  if (mode_out == 5)
+    num = 1 << 3;
 
   digitalWrite(latchPin, LOW);                        // устанавливаем синхронизацию "защелки" на LOW
   shiftOut(dataPin, clockPin, LSBFIRST, num);   // передаем последовательно на dataPin
