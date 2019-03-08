@@ -86,7 +86,12 @@ void setup() {
   pinMode(buttonTwo, INPUT_PULLUP);
 
   int num = 1 << (mode_out - 1);
+<<<<<<< HEAD
   
+=======
+  //out = String(mode_out);
+
+>>>>>>> 0c10c309d9efcc16829b7521d42c1c2655ed8141
   if (mode_out == 4)
     num = 1 << (4);
 
