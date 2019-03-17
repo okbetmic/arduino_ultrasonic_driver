@@ -6,9 +6,9 @@
 volatile unsigned int int_tic = 0;
 volatile unsigned long tic;
 
-int dataPin  = 4;   //Пин подключен к DS входу 74HC595
+int dataPin  = 7;   //Пин подключен к DS входу 74HC595
 int latchPin = 6;  //Пин подключен к ST_CP входу 74HC595
-int clockPin = 7; //Пин подключен к SH_CP входу 74HC595
+int clockPin = 4; //Пин подключен к SH_CP входу 74HC595
 volatile int mode_out = 4;//начальный режим работы
 
 long int old_f;
@@ -65,10 +65,16 @@ long int limit[7][2] = {
 };
 
 
+void(* resetFunc) (void) = 0;
+bool fs = true;
+
 TFT tft = TFT(CS, DC, RESET);
 
 void setup() {
-  delay(1000); //время наподумать
+
+  tft.begin();
+  tft.background(background_color);
+  delay(200);
   //Serial.begin(9600);
   pinMode (5, INPUT); // вход сигнала T1 (only для atmega328)
 
@@ -78,13 +84,13 @@ void setup() {
 
   TCCR1A = 0; TIMSK1 = 1 << TOIE1; //прерывание по переполнению
   TCCR1B = (1 << CS10) | (1 << CS11) | (1 << CS12); //тактировани от входа Т1
-
+  delay(200);
   pinMode(latchPin, OUTPUT);
   pinMode(clockPin, OUTPUT);
   pinMode(dataPin, OUTPUT);
   pinMode(buttonOne, INPUT_PULLUP);
   pinMode(buttonTwo, INPUT_PULLUP);
-
+  delay(200);
   int num = 1 << (mode_out - 1);
   if (mode_out == 4)
     num = 1 << (4);
@@ -95,13 +101,10 @@ void setup() {
   digitalWrite(latchPin, LOW);                        // устанавливаем синхронизацию "защелки" на LOW
   shiftOut(dataPin, clockPin, LSBFIRST, num);   // передаем последовательно на dataPin
   digitalWrite(latchPin, HIGH);                       //"защелкиваем" регистр, тем самым устанавливая значения на выходах
-
+  delay(200);
   attachInterrupt(buttonOne - 2, mode_down, LOW);
   attachInterrupt(buttonTwo - 2, mode_up, LOW);
-
-  tft.begin();
-  tft.background(background_color);
-
+  delay(200);
   initialization();
 }
 
