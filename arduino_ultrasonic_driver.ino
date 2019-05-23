@@ -71,7 +71,6 @@ bool fs = true;
 TFT tft = TFT(CS, DC, RESET);
 
 void setup() {
-
   tft.begin();
   tft.background(background_color);
   delay(200);
@@ -153,6 +152,7 @@ void loop() {
 }
 
 void initialization() {
+  tft.begin();
   tft.background(background_color);
   tft.setTextSize(F_SIZE);
 
