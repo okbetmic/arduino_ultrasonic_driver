@@ -10,6 +10,10 @@ int step_size = 1;
 
 volatile unsigned int int_tic = 0;
 volatile unsigned long tic;
+#define battery 5      // пин измерения напряжения
+int volts, watts;    // храним вольты и ватты
+float ohms;          // храним омы
+float my_vcc_const;  // константа вольтметра
 
 long int old_f;
 
