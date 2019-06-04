@@ -5,7 +5,7 @@
 
 #define external_driver 1 // - режим "external driver" (A4988)
 
-AccelStepper StepMotor(external_driver, STEP, DIR); 
+AccelStepper StepMotor(external_driver, STEP, DIR);
 int step_size = 1;
 
 volatile unsigned int int_tic = 0;
@@ -17,6 +17,8 @@ float my_vcc_const;  // константа вольтметра
 
 long int old_f;
 
+long int f_out = tic;
+
 void setup() {
   StepMotor.setMaxSpeed(3000); //устанавливаем максимальную скорость вращения ротора двигателя (шагов/секунду)
   StepMotor.setAcceleration(13000); //устанавливаем ускорение (шагов/секунду^2)
@@ -24,7 +26,7 @@ void setup() {
   delay(1000); //время наподумать
   Serial.begin(9600);
   pinMode (5, INPUT); // вход сигнала T1 (only для atmega328)
-  
+
   TCCR2A = 1 << WGM21; //CTC mode
   TIMSK2 = 1 << OCIE2A; OCR2A = 124 ; //прерывание каждые 8мс
   TCCR2B = (1 << CS22) | (1 << CS21) | (1 << CS20); //делитель 1024
@@ -32,18 +34,18 @@ void setup() {
   TCCR1A = 0; TIMSK1 = 1 << TOIE1; //прерывание по переполнению
   TCCR1B = (1 << CS10) | (1 << CS11) | (1 << CS12); //тактировани от входа Т1
 
-  long int f_out = tic;
-
-  int n = 1000; //количество оборотов двигателя
-
-  for(int i = 0; i < n; i++){
+  delay(2000);
+  int n = 0; //количество оборотов двигателя
+  for (int i = 0; i < n; i++) {
     motor_run();
-    if(f_out != tic){
+    if (abs(f_out - tic) >= 5) {
       Serial.print(tic);
       Serial.print("/t");
       Serial.println(readVcc());
-      }
+      f_out = tic;
     }
+    delay(200);
+  }
 }
 
 
@@ -64,9 +66,10 @@ ISR (TIMER2_COMPA_vect) {
 
 void loop() {
 
+  motor_run();
 }
 
-void motor_run(){
+void motor_run() {
   StepMotor.run();
   StepMotor.move(step_size);
 }
