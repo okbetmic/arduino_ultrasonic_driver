@@ -1,11 +1,11 @@
-#include <AccelStepper.h>
-
-#define STEP 13
-#define DIR 12
-
+#define Y_STP     3
+#define Y_DIR     6
+#define EN        8
 #define external_driver 1 // - режим "external driver" (A4988)
 
-AccelStepper StepMotor(external_driver, STEP, DIR);
+#include <EEPROMex.h>   // библиотека для работы со внутренней памятью ардуино
+#define initial_calibration 1
+
 int step_size = 1;
 
 volatile unsigned int int_tic = 0;
@@ -19,14 +19,47 @@ long int old_f;
 
 long int f_out = tic;
 
-void setup() {
-  StepMotor.setMaxSpeed(3000); //устанавливаем максимальную скорость вращения ротора двигателя (шагов/секунду)
-  StepMotor.setAcceleration(13000); //устанавливаем ускорение (шагов/секунду^2)
+int delayTime = 30; //Delay between each pause (uS)
+int stps = 6400; // Steps to move
 
+void step(boolean dir, byte dirPin, byte stepperPin, int steps)
+{
+  digitalWrite(dirPin, dir);
+  delay(100);
+  for (int i = 0; i < steps; i++) {
+    digitalWrite(stepperPin, HIGH);
+    delayMicroseconds(delayTime);
+    digitalWrite(stepperPin, LOW);
+    delayMicroseconds(delayTime);
+  }
+}
+
+void calibration() {
+  //--------калибровка----------
+  for (byte i = 0; i < 7; i++) EEPROM.writeInt(i, 0);          // чистим EEPROM для своих нужд
+  my_vcc_const = 1.1;
+  Serial.print("Real VCC is: "); Serial.println(readVcc());     // общаемся с пользователем
+  Serial.println("Write your VCC (in millivolts)");
+  while (Serial.available() == 0); int Vcc = Serial.parseInt(); // напряжение от пользователя
+  float real_const = (float)1.1 * Vcc / readVcc();              // расчёт константы
+  Serial.print("New voltage constant: "); Serial.println(real_const, 3);
+  EEPROM.writeFloat(8, real_const);                             // запись в EEPROM
+  while (1); // уйти в бесконечный цикл
+  //------конец калибровки-------
+}
+
+void setup() {
   delay(1000); //время наподумать
   Serial.begin(9600);
   pinMode (5, INPUT); // вход сигнала T1 (only для atmega328)
+  pinMode(Y_DIR, OUTPUT); pinMode(Y_STP, OUTPUT);
+  pinMode(EN, OUTPUT);
+  digitalWrite(EN, LOW);
+  
+  if (initial_calibration) calibration();  // калибровка, если разрешена
 
+  my_vcc_const = EEPROM.readFloat(8);
+  
   TCCR2A = 1 << WGM21; //CTC mode
   TIMSK2 = 1 << OCIE2A; OCR2A = 124 ; //прерывание каждые 8мс
   TCCR2B = (1 << CS22) | (1 << CS21) | (1 << CS20); //делитель 1024
@@ -65,13 +98,10 @@ ISR (TIMER2_COMPA_vect) {
 
 
 void loop() {
-
-  motor_run();
 }
 
 void motor_run() {
-  StepMotor.run();
-  StepMotor.move(step_size);
+  step(false, Y_DIR, Y_STP, stps);
 }
 
 long readVcc() { //функция чтения внутреннего опорного напряжения, универсальная (для всех ардуин)
