@@ -19,6 +19,8 @@
 #define EN_DT 3
 #define EN_SW 4
 
+#define MAX_STEP 1000000
+#define MIN_STEP 1
 
 #define phase 0
 #define freq_min 1
@@ -27,15 +29,26 @@
 Encoder E(EN_CLK, EN_DT, EN_SW);
 LiquidCrystal_I2C lcd(I2C_ADR, symbolscount, stringscount); //i2c-адрес, кол-во символов, кол-во строк
 
-long long int freq_step = 1;
+int freq_step = 1;
 int freq = 1;
 
 
 void setup() {
   DDS.begin(AD_W_CLK, AD_FQ_UD, AD_DATA_D7, RESET);
+  
   lcd.begin();
   lcd.clear();
+  
+  lcd.setCursor(0, 0);
+  lcd.print("freq: ");
+  lcd.setCursor(6, 0);
   lcd.print(freq);
+  
+  lcd.setCursor(0, 1);
+  lcd.print("step: ");
+  lcd.setCursor(6, 1);
+  lcd.print(freq_step);
+  
   DDS.setfreq(freq, phase);
 }
 
@@ -51,21 +64,35 @@ void loop() {
     freq_change();
   }
   
-  if(E.isClick()){
-    step_change();  
+  if(E.isRightH()){
+    if (freq_step < MAX_STEP)
+    {
+      freq_step *= 10;
+      step_change();
+    }
+  }
+  if(E.isLeftH()){
+    if (freq_step > MIN_STEP)
+    {
+      freq_step /= 10;
+      step_change();
+    }
   }
 }
 
 void freq_change(){
   DDS.setfreq(freq, phase);
 
-  lcd.clear();
+  lcd.setCursor(6, 0);
+  lcd.print("          ");
+   lcd.setCursor(6, 0);
   lcd.print(freq);
 }
 
-void step_change(){
-  if(freq_step == 1)
-    freq_step = 1000000;
-  else
-    freq_step/= 10;
+void step_change()
+{
+  lcd.setCursor(6, 1);
+  lcd.print("          ");
+  lcd.setCursor(6, 1);
+  lcd.print(freq_step);
 }
