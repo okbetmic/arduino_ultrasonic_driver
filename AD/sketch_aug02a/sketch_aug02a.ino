@@ -1,7 +1,8 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
-#include "GyverEncoder.h"
 #include <AD9850.h>
+#include <EEPROM.h>
+#include "GyverEncoder.h"
 
 //LCD pins
 #define I2C_ADR 0x27
@@ -57,7 +58,10 @@ void setup() {
 }
 
 void loop() {
+  
   E.tick();
+  DDS.setfreq(freq, PHASE);
+  
   if (E.isRight() && freq + freq_step <= MAX_FREQ) {
     freq += freq_step;
     freq_change();
@@ -89,8 +93,6 @@ void loop() {
 }
 
 void freq_change() {
-  DDS.setfreq(freq, PHASE);
-
   lcd.setCursor(6, 0);
   lcd.print("          ");
   lcd.setCursor(6, 0);
