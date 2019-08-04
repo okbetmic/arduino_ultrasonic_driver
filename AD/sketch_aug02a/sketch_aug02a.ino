@@ -23,6 +23,7 @@
 #define MAX_STEP 100000
 #define MIN_STEP 1
 
+#define STEP_CHANGE_CNT 3
 #define F_DELAY 0
 
 #define PHASE 0
@@ -34,7 +35,7 @@ LiquidCrystal_I2C lcd(I2C_ADR, symbolscount, stringscount);
 
 long freq_step = 1;
 long freq = 1;
-
+int step_change_counter = 0;
 
 void setup() {
   DDS.begin(AD_W_CLK, AD_FQ_UD, AD_DATA_D7, RESET);
@@ -58,10 +59,10 @@ void setup() {
 }
 
 void loop() {
-  
+
   E.tick();
   DDS.setfreq(freq, PHASE);
-  
+
   if (E.isRight() && freq + freq_step <= MAX_FREQ) {
     freq += freq_step;
     freq_change();
@@ -75,21 +76,36 @@ void loop() {
   }
 
   if (E.isRightH()) {
-    if (freq_step < MAX_STEP)
+    if (step_change_counter == STEP_CHANGE_CNT)
     {
-      freq_step *= 10;
-      step_change();
-      delay(F_DELAY);
+      step_change_counter = 0;
+      if (freq_step < MAX_STEP)
+      {
+        freq_step *= 10;
+        step_change();
+        delay(F_DELAY);
+      }
     }
+    else
+      step_change_counter++;
+
   }
   if (E.isLeftH()) {
-    if (freq_step > MIN_STEP)
+    if (step_change_counter == STEP_CHANGE_CNT)
     {
-      freq_step /= 10;
-      step_change();
-      delay(F_DELAY);
+      step_change_counter = 0;
+      if (freq_step > MIN_STEP)
+      {
+        freq_step /= 10;
+        step_change();
+        delay(F_DELAY);
+      }
     }
+    else
+      step_change_counter++;
   }
+  if (E.isRelease())
+    step_change_counter = 0;
 }
 
 void freq_change() {
