@@ -23,18 +23,18 @@
 #define MAX_STEP 100000
 #define MIN_STEP 1
 
-#define STEP_CHANGE_CNT 3
+#define STEP_CHANGE_CNT 2
 #define F_DELAY 0
 
 #define PHASE 0
-#define MIN_FREQ 1
+#define MIN_FREQ 0
 #define MAX_FREQ 1000000
 
 Encoder E(EN_CLK, EN_DT, EN_SW);
 LiquidCrystal_I2C lcd(I2C_ADR, symbolscount, stringscount);
 
 long freq_step = 1;
-long freq = 1;
+long freq = 0;
 int step_change_counter = 0;
 
 void setup() {
