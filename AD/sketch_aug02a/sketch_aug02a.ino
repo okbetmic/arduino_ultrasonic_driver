@@ -4,6 +4,9 @@
 #include <EEPROM.h>
 #include "GyverEncoder.h"
 
+//EEPROM
+#define FREQ_ADR 0
+
 //LCD pins
 #define I2C_ADR 0x27
 #define symbolscount 20
@@ -38,6 +41,8 @@ long freq = 0;
 int step_change_counter = 0;
 
 void setup() {
+  freq = EEPROMReadlong(FREQ_ADR);
+  
   DDS.begin(AD_W_CLK, AD_FQ_UD, AD_DATA_D7, RESET);
 
   E.setType(TYPE1);
@@ -113,6 +118,8 @@ void freq_change() {
   lcd.print("          ");
   lcd.setCursor(6, 0);
   lcd.print(freq);
+
+  EEPROMWritelong(FREQ_ADR, freq);
 }
 
 void step_change()
@@ -121,4 +128,25 @@ void step_change()
   lcd.print("          ");
   lcd.setCursor(6, 1);
   lcd.print(freq_step);
+}
+
+long long EEPROMReadlong(long address) {
+  long four = EEPROM.read(address);
+  long three = EEPROM.read(address + 1);
+  long two = EEPROM.read(address + 2);
+  long one = EEPROM.read(address + 3);
+ 
+  return ((four << 0) & 0xFF) + ((three << 8) & 0xFFFF) + ((two << 16) & 0xFFFFFF) + ((one << 24) & 0xFFFFFFFF);
+}
+
+void EEPROMWritelong(int address, long value) {
+  byte four = (value & 0xFF);
+  byte three = ((value >> 8) & 0xFF);
+  byte two = ((value >> 16) & 0xFF);
+  byte one = ((value >> 24) & 0xFF);
+ 
+  EEPROM.write(address, four);
+  EEPROM.write(address + 1, three);
+  EEPROM.write(address + 2, two);
+  EEPROM.write(address + 3, one);
 }
