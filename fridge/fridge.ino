@@ -4,7 +4,7 @@
 #include <SD.h> //карта памяти обязательно FAT16 или FAT32
 
 #define ONE_WIRE_BUS 2
-#define DELAY 30*1000
+#define DELAY 1*1000
 
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
