@@ -41,10 +41,11 @@ void setup(void){
   }
   File dataFridge = SD.open("fridgelog.txt", FILE_WRITE);
   File dataLog = SD.open("startlog.txt", FILE_WRITE);//проверка
-  dataLog.println("Hello World!");
-  dataLog.close();
   dataFridge.println("start logging");
   dataFridge.close();
+  dataLog.println("Hello World!");
+  dataLog.close();
+  
 }
 
 void loop(void){
