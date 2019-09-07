@@ -57,6 +57,7 @@ void loop(void){
       dataFile.print(tempC);
     }
     dataFile.print('\n');
+    dataFile.close();
     if(Serial)
       Serial.println("");
 
