@@ -4,7 +4,7 @@
 #include <SD.h> //карта памяти обязательно FAT16 или FAT32
 
 #define ONE_WIRE_BUS 2
-#define DELAY 30*1000
+#define DELAY 5*1000
 
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
@@ -42,11 +42,14 @@ void setup(void){
   File dataFile = SD.open("startlog.txt", FILE_WRITE);//проверка
   dataFile.println("Hello World!");
   dataFile.close();
+  File dataFridge = SD.open("fridgelog.txt", FILE_WRITE);
+  dataFridge.println("start logging");
 }
 
 void loop(void){
   if ((unsigned long)(millis() - t) >= DELAY){
-    File dataFile = SD.open("fridgelog.txt", FILE_WRITE); //Возможно нужно создать файл на сд карте перед тем как её туда вставлять
+    File dataFridge = SD.open("fridgelog.txt", FILE_WRITE); //Возможно нужно создать файл на сд карте перед тем как её туда вставлять
+    dataFridge.print(t);
     
     t = millis();
     if(Serial){
@@ -55,18 +58,17 @@ void loop(void){
     }
     
     sensors.requestTemperatures();
-    dataFile.print(t);
     for (int i = 0;  i < deviceCount;  i++){
       tempC = sensors.getTempCByIndex(i);
       if(Serial){
         Serial.print(tempC);
         Serial.print("\t");
       }
-      dataFile.print('\t');
-      dataFile.print(tempC);
+      dataFridge.print('\t');
+      dataFridge.print(tempC);
     }
-    dataFile.print('\n');
-    dataFile.close();
+    dataFridge.print('\n');
+    dataFridge.close();
     if(Serial)
       Serial.println("");
 
