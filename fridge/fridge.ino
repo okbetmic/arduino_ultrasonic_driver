@@ -15,9 +15,6 @@ unsigned long t = 0;
 
 const int chipSelect = 10;
 
-File dataFridge = SD.open("fridgelog.txt", FILE_WRITE);
-File dataLog = SD.open("startlog.txt", FILE_WRITE);//проверка
-
 void setup(void){
   Serial.begin(9600);
   
@@ -42,14 +39,17 @@ void setup(void){
 
     Serial.println("millis\texternal\tinternal_top\tinternal_bottom");
   }
+  File dataFridge = SD.open("fridgelog.txt", FILE_WRITE);
+  File dataLog = SD.open("startlog.txt", FILE_WRITE);//проверка
   dataLog.println("Hello World!");
   dataLog.close();
   dataFridge.println("start logging");
+  dataFridge.close();
 }
 
 void loop(void){
   if ((unsigned long)(millis() - t) >= DELAY){
-    //File dataFridge = SD.open("fridgelog.txt", FILE_WRITE); //Возможно нужно создать файл на сд карте перед тем как её туда вставлять
+    File dataFridge = SD.open("fridgelog.txt", FILE_WRITE); //Возможно нужно создать файл на сд карте перед тем как её туда вставлять
     dataFridge.print(t);
     
     t = millis();
