@@ -4,7 +4,7 @@
 #include <SD.h> //карта памяти обязательно FAT16 или FAT32
 
 #define ONE_WIRE_BUS 2
-#define DELAY 1*1000
+#define DELAY 30*1000
 
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
@@ -15,8 +15,9 @@ unsigned long t = 0;
 
 const int chipSelect = 10;
 
-void setup(void)
-{
+void setup(void){
+  Serial.begin(9600);
+  
    if (!SD.begin(chipSelect)) {
     Serial.println("Card failed, or not present");
     // don't do anything more:
@@ -27,7 +28,6 @@ void setup(void)
   
   sensors.begin();
   if(Serial){
-    Serial.begin(9600);
     Serial.print("Locating devices...");
     Serial.print("Found ");
   }
