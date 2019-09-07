@@ -1,7 +1,7 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <SPI.h>
-#include <SD.h>
+#include <SD.h> //карта памяти обязательно FAT16 или FAT32
 
 #define ONE_WIRE_BUS 2
 #define DELAY 30*1000
@@ -20,36 +20,45 @@ void setup(void)
   SD.begin(chipSelect);
   
   sensors.begin();
-  Serial.begin(9600);
-  Serial.print("Locating devices...");
-  Serial.print("Found ");
+  if(Serial){
+    Serial.begin(9600);
+    Serial.print("Locating devices...");
+    Serial.print("Found ");
+  }
   deviceCount = sensors.getDeviceCount();
-  Serial.print(deviceCount, DEC);
-  Serial.println(" devices.");
-  Serial.println("");
+  if(Serial){
+    Serial.print(deviceCount, DEC);
+    Serial.println(" devices.");
+    Serial.println("");
 
-  Serial.println("millis\texternal\tinternal_top\tinternal_bottom");
-
+    Serial.println("millis\texternal\tinternal_top\tinternal_bottom");
+  }
 }
 
 void loop(void){
   if ((unsigned long)(millis() - t) >= DELAY){
-    File dataFile = SD.open("fridgelog.txt", FILE_WRITE);
+    File dataFile = SD.open("fridgelog.txt", FILE_WRITE); //Возможно нужно создать файл на сд карте перед тем как её туда вставлять
     
     t = millis();
-    Serial.print(t);
-    Serial.print("\t");
-
+    if(Serial){
+      Serial.print(t);
+      Serial.print("\t");
+    }
+    
     sensors.requestTemperatures();
+    dataFile.print(t);
     for (int i = 0;  i < deviceCount;  i++){
       tempC = sensors.getTempCByIndex(i);
-      Serial.print(tempC);
-      Serial.print("\t");
-      dataFile.print(tempC);
+      if(Serial){
+        Serial.print(tempC);
+        Serial.print("\t");
+      }
       dataFile.print('\t');
+      dataFile.print(tempC);
     }
     dataFile.print('\n');
-    Serial.println("");
+    if(Serial)
+      Serial.println("");
 
   }
 }
