@@ -39,10 +39,7 @@ void setup(void){
 
     Serial.println("millis\texternal\tinternal_top\tinternal_bottom");
   }
-  File dataFridge = SD.open("fridgelog.txt", FILE_WRITE);
   File dataLog = SD.open("startlog.txt", FILE_WRITE);//проверка
-  dataFridge.println("start logging");
-  dataFridge.close();
   dataLog.println("Hello World!");
   dataLog.close();
   
@@ -50,8 +47,8 @@ void setup(void){
 
 void loop(void){
   if ((unsigned long)(millis() - t) >= DELAY){
-    File dataFridge = SD.open("fridgelog.txt", FILE_WRITE); //Возможно нужно создать файл на сд карте перед тем как её туда вставлять
-    dataFridge.print(t);
+    File dataLog = SD.open("startlog.txt", FILE_WRITE);
+    dataLog.print(t);
     
     t = millis();
     if(Serial){
@@ -66,11 +63,11 @@ void loop(void){
         Serial.print(tempC);
         Serial.print("\t");
       }
-      dataFridge.print('\t');
-      dataFridge.print(tempC);
+      dataLog.print('\t');
+      dataLog.print(tempC);
     }
-    dataFridge.print('\n');
-    dataFridge.close();
+    dataLog.print('\n');
+    dataLog.close();
     if(Serial)
       Serial.println("");
 
