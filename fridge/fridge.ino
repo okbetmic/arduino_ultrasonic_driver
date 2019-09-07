@@ -17,7 +17,13 @@ const int chipSelect = 10;
 
 void setup(void)
 {
-  SD.begin(chipSelect);
+   if (!SD.begin(chipSelect)) {
+    Serial.println("Card failed, or not present");
+    // don't do anything more:
+    return;
+  }
+  
+  //SD.begin(chipSelect);
   
   sensors.begin();
   if(Serial){
@@ -33,6 +39,9 @@ void setup(void)
 
     Serial.println("millis\texternal\tinternal_top\tinternal_bottom");
   }
+  File dataFile = SD.open("startlog.txt", FILE_WRITE);
+  dataFile.println("Hello World!");
+  dataFile.close();
 }
 
 void loop(void){
@@ -57,6 +66,7 @@ void loop(void){
       dataFile.print(tempC);
     }
     dataFile.print('\n');
+    dataFile.close();
     if(Serial)
       Serial.println("");
 
