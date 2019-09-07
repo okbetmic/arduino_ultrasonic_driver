@@ -39,7 +39,7 @@ void setup(void)
 
     Serial.println("millis\texternal\tinternal_top\tinternal_bottom");
   }
-  File dataFile = SD.open("startlog.txt", FILE_WRITE);
+  File dataFile = SD.open("startlog.txt", FILE_WRITE);//проверка
   dataFile.println("Hello World!");
   dataFile.close();
 }
