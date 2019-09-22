@@ -5,6 +5,8 @@
 #include "GyverEncoder.h"
 #include "GyverButton.h"
 
+#define DEBUG
+
 //EEPROM
 #define FREQ_ADR 0
 
@@ -80,6 +82,9 @@ void loop() {
   DDS.setfreq(freq, PHASE);
 
   if(jump_button.isSingle()){ //нажата кнопка прыжка
+#ifdef DEBUG
+    Serial.println("start jumping");
+#endif
     freq_jump();
   }
 
@@ -169,9 +174,12 @@ void EEPROMWritelong(int address, long value) {
 void freq_jump(){
   int n = JUMP_COUNT;
   while(n--){
-    for(int i = 0; i <= freq_step; i+= freq_step * DELTA_JUMP){
-     DDS.setfreq(freq + i, PHASE);
-     delayMicroseconds(SCAN_DELAY * DELTA_JUMP);
+#ifdef DEBUG
+    Serial.println(n);
+#endif
+    for(long double i = 0; i <= step[freq_step]; i+= (long double)step[freq_step] * DELTA_JUMP){
+      DDS.setfreq(freq + i, PHASE);
+      delayMicroseconds(SCAN_DELAY * DELTA_JUMP);
     }
   }
 }
