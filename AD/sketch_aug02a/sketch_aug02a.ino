@@ -42,6 +42,7 @@ int step[MAX_STEP+1] = {1, 5, 10, 50, 100, 300, 500, 1000, 2000, 3000, 5000, 100
 #define DELTA_JUMP 0.001
 #define SCAN_DELAY 200*1e3 //microseconds
 #define JUMP_COUNT 10
+#define AD_DELAY 786.4 //microseconds
 
 
 GButton jump_button(BUTTON_PIN);
@@ -53,6 +54,8 @@ long freq = 0;
 int step_change_counter = 0;
 
 void setup() {
+  Serial.begin(9600);
+ 
   freq = EEPROMReadlong(FREQ_ADR);
   
   DDS.begin(AD_W_CLK, AD_FQ_UD, AD_DATA_D7, RESET);
@@ -173,13 +176,14 @@ void EEPROMWritelong(int address, long value) {
 
 void freq_jump(){
   int n = JUMP_COUNT;
+  long double count = SCAN_DELAY / AD_DELAY;
   while(n--){
 #ifdef DEBUG
     Serial.println(n);
 #endif
-    for(long double i = 0; i <= step[freq_step]; i+= (long double)step[freq_step] * DELTA_JUMP){
+    for(long double i = 0; i <= step[freq_step]; i+= (long double)step[freq_step] / count){
       DDS.setfreq(freq + i, PHASE);
-      delayMicroseconds(SCAN_DELAY * DELTA_JUMP);
+      //delayMicroseconds(SCAN_DELAY * DELTA_JUMP);
     }
   }
 }
