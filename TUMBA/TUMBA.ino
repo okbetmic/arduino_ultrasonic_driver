@@ -2,6 +2,8 @@
 #include <LiquidCrystal_I2C.h>
 #include <AD9850.h>
 #include <EEPROM.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
 #include "GyverEncoder.h"
 #include "GyverButton.h"
 
@@ -26,7 +28,7 @@
 #define EN_DT 3
 #define EN_SW 4
 
-#define TEMP 10
+#define ONE_WIRE_BUS 10 //температура
 
 #define MAX_STEP 11
 #define MIN_STEP 0
@@ -51,15 +53,31 @@ GButton jump_button(BUTTON_PIN);
 Encoder E(EN_CLK, EN_DT, EN_SW);
 LiquidCrystal_I2C lcd(I2C_ADR, symbolscount, stringscount);
 
+OneWire oneWire(ONE_WIRE_BUS);
+DallasTemperature sensors(&oneWire);
+
 long freq_step = 1;
 long freq = 0;
 long step_change_counter = 0;
+int deviceCount = 0;
+float tempC;
+unsigned long t = 0;
 
 void setup() {
   Serial.begin(9600);
   freq = EEPROMReadlong(FREQ_ADR);
   DDS.begin(AD_W_CLK, AD_FQ_UD, AD_DATA_D7, RESET);
 
+  sensors.begin();
+  deviceCount = sensors.getDeviceCount();
+
+  if(Serial){
+    Serial.print(deviceCount, DEC);
+    Serial.println(" devices.");
+    Serial.println("");
+
+    Serial.println("millis\texternal\tinternal_top\tinternal_bottom");
+  }
 
   E.setType(TYPE1);
 
@@ -76,11 +94,37 @@ void setup() {
   lcd.setCursor(6, 1);
   lcd.print(freq_step);
 
+  lcd.setCursor(0, 2);
+  lcd.print("u = ");
+  lcd.setCursor(7, 2);
+  lcd.print("d = ");
+  lcd.setCursor(14, 2);
+  lcd.print("w = ");
+
   DDS.setfreq(freq, PHASE);
 }
 
 void loop() {
+  if(Serial){
+      Serial.print(t);
+      Serial.print("\t");
+  }
 
+  sensors.requestTemperatures();
+  for (int i = 0;  i < deviceCount;  i++){
+    tempC = sensors.getTempCByIndex(i);
+    lcd.setCursor(7*i + 4, 2);
+    lcd.print(tempC);
+    if(Serial){
+      Serial.print(tempC);
+      Serial.print("\t");
+    }
+  }
+
+  for (int i = 0;  i < deviceCount;  i++){
+    tempC = sensors.getTempCByIndex(i);
+  }
+  
   E.tick();
   jump_button.tick();
   DDS.setfreq(freq, PHASE);
