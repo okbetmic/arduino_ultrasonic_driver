@@ -61,7 +61,7 @@ long freq = 0;
 long step_change_counter = 0;
 int deviceCount = 0;
 float tempC;
-unsigned long t = 0;
+unsigned long t = 0, last_time = 0;
 
 void setup() {
   Serial.begin(9600);
@@ -101,6 +101,11 @@ void setup() {
   lcd.setCursor(14, 2);
   lcd.print("w = ");
 
+  for(int i = 0; i < 3; i++){
+    lcd.setCursor(i * 3 + 2, 3);
+    lcd.print(":");
+  }
+
   DDS.setfreq(freq, PHASE);
 }
 
@@ -108,6 +113,24 @@ void loop() {
   if(Serial){
       Serial.print(t);
       Serial.print("\t");
+  }
+
+  if(last_time - millis() > 1000){
+    last_time = millis();
+
+    long tim[3];
+    tim[0] = last_time / 1000 / 60 / 60;
+    tim[1] = (last_time / 1000 / 60) % 60;
+    tim[2] = (last_time / 1000) % 60;
+
+    for(int i = 0; i < 3; i++){
+      lcd.setCursor(i * 3, 3);
+      if(tim[i] / 10 == 0){
+        lcd.print(0);
+        lcd.setCursor(i*3 + 1, 3);  
+      }
+      lcd.print(tim[i]);
+    }
   }
 
   sensors.requestTemperatures();
