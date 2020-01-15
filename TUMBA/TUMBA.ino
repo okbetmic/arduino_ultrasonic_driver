@@ -42,7 +42,7 @@ long step[MAX_STEP + 1] = {1, 5, 10, 50, 100, 300, 500, 1000, 2000, 3000, 5000, 
 #define MAX_FREQ 1000000
 
 #define NEW_TIME 1000
-#define TEMP_TIME 1000
+#define TEMP_TIME 3000
 
 //jump
 #define BUTTON_PIN 12
@@ -147,9 +147,10 @@ void loop() {
       if(i == 0)
         lcd.setCursor(4, 3);  // водный
       if(i == 1)
-        lcd.setCursor(10 + 4, 2); // нижний
-      if(i == 2)
         lcd.setCursor(4, 2); // верхний
+      if(i == 2)
+        lcd.setCursor(10 + 4, 2); // нижний
+        
         
       lcd.print(tempC);
       if(Serial){
