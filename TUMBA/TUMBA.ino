@@ -144,10 +144,13 @@ void loop() {
     sensors.requestTemperatures();
     for (int i = 0;  i < deviceCount;  i++){
       tempC = sensors.getTempCByIndex(i);
-      if(i == deviceCount - 1)
-        lcd.setCursor(4, 3);  
-      else
-        lcd.setCursor(10*i + 4, 2);
+      if(i == 0)
+        lcd.setCursor(4, 3);  // водный
+      if(i == 1)
+        lcd.setCursor(10 + 4, 2); // нижний
+      if(i == 2)
+        lcd.setCursor(4, 2); // верхний
+        
       lcd.print(tempC);
       if(Serial){
         Serial.print(millis());
