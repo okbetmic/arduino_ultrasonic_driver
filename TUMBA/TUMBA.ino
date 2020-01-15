@@ -61,7 +61,7 @@ long freq = 0;
 long step_change_counter = 0;
 int deviceCount = 0;
 float tempC;
-unsigned long t = 0, last_time = 0;
+unsigned long last_temp = 0, last_time = 0;
 
 void setup() {
   Serial.begin(9600);
@@ -110,12 +110,7 @@ void setup() {
 }
 
 void loop() {
-  if(Serial){
-      Serial.print(t);
-      Serial.print("\t");
-  }
-
-  if(last_time - millis() > 1000){
+  if(millis() - last_time > 1000){
     last_time = millis();
 
     long tim[3];
@@ -133,22 +128,26 @@ void loop() {
     }
   }
 
-  sensors.requestTemperatures();
-  for (int i = 0;  i < deviceCount;  i++){
-    tempC = sensors.getTempCByIndex(i);
-    if(i == deviceCount - 1)
-      lcd.setCursor(4, 3);  
-    else
-      lcd.setCursor(10*i + 4, 2);
-    lcd.print(tempC);
-    if(Serial){
-      Serial.print(tempC);
-      Serial.print("\t");
+  if(millis() - last_temp > 5000){
+    last_temp = millis();
+    
+    sensors.requestTemperatures();
+    for (int i = 0;  i < deviceCount;  i++){
+      tempC = sensors.getTempCByIndex(i);
+      if(i == deviceCount - 1)
+        lcd.setCursor(4, 3);  
+      else
+        lcd.setCursor(10*i + 4, 2);
+      lcd.print(tempC);
+      if(Serial){
+        Serial.print(millis());
+        Serial.print(tempC);
+        Serial.print("\t");
+      }
     }
-  }
-
-  for (int i = 0;  i < deviceCount;  i++){
-    tempC = sensors.getTempCByIndex(i);
+    for (int i = 0;  i < deviceCount;  i++){
+      tempC = sensors.getTempCByIndex(i);
+    }
   }
   
   E.tick();
