@@ -41,6 +41,9 @@ long step[MAX_STEP + 1] = {1, 5, 10, 50, 100, 300, 500, 1000, 2000, 3000, 5000, 
 #define MIN_FREQ 0
 #define MAX_FREQ 1000000
 
+#define NEW_TIME 1000
+#define TEMP_TIME 1000
+
 //jump
 #define BUTTON_PIN 12
 #define DELTA_JUMP 0.001
@@ -110,7 +113,7 @@ void setup() {
 }
 
 void loop() {
-  if(millis() - last_time > 1000){
+  if(millis() - last_time > NEW_TIME){
     last_time = millis();
 
     long tim[3];
@@ -128,7 +131,7 @@ void loop() {
     }
   }
 
-  if(millis() - last_temp > 5000){
+  if(millis() - last_temp > TEMP_TIME){
     last_temp = millis();
 
     lcd.setCursor(0, 2);
