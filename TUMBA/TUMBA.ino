@@ -102,7 +102,7 @@ void setup() {
   lcd.print("w = ");
 
   for(int i = 0; i < 2; i++){
-    lcd.setCursor(i * 3 + 2 + 10, 3);
+    lcd.setCursor(i * 3 + 2 + 12, 3);
     lcd.print(":");
   }
 
@@ -119,10 +119,10 @@ void loop() {
     tim[2] = (last_time / 1000) % 60;
 
     for(int i = 0; i < 3; i++){
-      lcd.setCursor(i * 3 + 10, 3);
+      lcd.setCursor(i * 3 + 12, 3);
       if(tim[i] / 10 == 0){
         lcd.print(0);
-        lcd.setCursor(i*3 + 1 + 10, 3);  
+        lcd.setCursor(i*3 + 1 + 12, 3);  
       }
       lcd.print(tim[i]);
     }
@@ -130,6 +130,13 @@ void loop() {
 
   if(millis() - last_temp > 5000){
     last_temp = millis();
+
+    lcd.setCursor(0, 2);
+    lcd.print("u = ");
+    lcd.setCursor(10, 2);
+    lcd.print("d = ");
+    lcd.setCursor(0, 3);
+    lcd.print("w = ");
     
     sensors.requestTemperatures();
     for (int i = 0;  i < deviceCount;  i++){
