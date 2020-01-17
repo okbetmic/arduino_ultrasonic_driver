@@ -7,10 +7,11 @@
 #include "GyverEncoder.h"
 #include "GyverButton.h"
 
-#define DEBUG
+//#define DEBUG
 
 //EEPROM
-#define FREQ_ADR 0
+#define FREQ_ADDR 0
+#define STEP_ADDR 4
 
 //LCD pins
 #define I2C_ADR 0x27
@@ -43,6 +44,7 @@ long step[MAX_STEP + 1] = {1, 5, 10, 50, 100, 300, 500, 1000, 2000, 3000, 5000, 
 
 #define NEW_TIME 1000
 #define TEMP_TIME 3000
+#define REWRITE_SCREEN_TIME 10000
 
 //jump
 #define BUTTON_PIN 12
@@ -52,7 +54,7 @@ long step[MAX_STEP + 1] = {1, 5, 10, 50, 100, 300, 500, 1000, 2000, 3000, 5000, 
 #define AD_DELAY 786.4 //microseconds
 
 
-GButton jump_button(BUTTON_PIN);
+// GButton jump_button(BUTTON_PIN);
 Encoder E(EN_CLK, EN_DT, EN_SW);
 LiquidCrystal_I2C lcd(I2C_ADR, symbolscount, stringscount);
 
@@ -64,11 +66,12 @@ long freq = 0;
 long step_change_counter = 0;
 int deviceCount = 0;
 float tempC;
-unsigned long last_temp = 0, last_time = 0;
+unsigned long last_temp = 0, last_time = 0, last_rewrite = 0;
 
 void setup() {
   Serial.begin(9600);
-  freq = EEPROMReadlong(FREQ_ADR);
+  freq = EEPROMReadlong(FREQ_ADDR);
+  freq_step = EEPROMReadlong(STEP_ADDR);
   DDS.begin(AD_W_CLK, AD_FQ_UD, AD_DATA_D7, RESET);
 
   sensors.begin();
@@ -87,101 +90,38 @@ void setup() {
   lcd.begin();
   lcd.clear();
 
-  lcd.setCursor(0, 0);
-  lcd.print("freq: ");
-  lcd.setCursor(6, 0);
-  lcd.print(freq);
-
-  lcd.setCursor(0, 1);
-  lcd.print("step: ");
-  lcd.setCursor(6, 1);
-  lcd.print(freq_step);
-
-  lcd.setCursor(0, 2);
-  lcd.print("u = ");
-  lcd.setCursor(10, 2);
-  lcd.print("d = ");
-  lcd.setCursor(0, 3);
-  lcd.print("w = ");
-
-  for(int i = 0; i < 2; i++){
-    lcd.setCursor(i * 3 + 2 + 12, 3);
-    lcd.print(":");
-  }
-
+  write_symbols();
+  
   DDS.setfreq(freq, PHASE);
 }
 
 void loop() {
+  
   if(millis() - last_time > NEW_TIME){
-    last_time = millis();
-
-    long tim[3];
-    tim[0] = last_time / 1000 / 60 / 60;
-    tim[1] = (last_time / 1000 / 60) % 60;
-    tim[2] = (last_time / 1000) % 60;
-
-    for(int i = 0; i < 3; i++){
-      lcd.setCursor(i * 3 + 12, 3);
-      if(tim[i] / 10 == 0){
-        lcd.print(0);
-        lcd.setCursor(i*3 + 1 + 12, 3);  
-      }
-      lcd.print(tim[i]);
-    }
+    last_time = millis() - millis() % 1000;
+    write_time();
   }
 
   if(millis() - last_temp > TEMP_TIME){
     last_temp = millis();
-
-    lcd.setCursor(0, 2);
-    lcd.print("u = ");
-    lcd.setCursor(10, 2);
-    lcd.print("d = ");
-    lcd.setCursor(0, 3);
-    lcd.print("w = ");
-    
-    sensors.requestTemperatures();
-    for (int i = 0;  i < deviceCount;  i++){
-      tempC = sensors.getTempCByIndex(i);
-      if(i == 0)
-        lcd.setCursor(4, 3);  // водный
-      if(i == 1)
-        lcd.setCursor(4, 2); // верхний
-      if(i == 2)
-        lcd.setCursor(10 + 4, 2); // нижний
-        
-        
-      lcd.print(tempC);
-      if(Serial){
-        Serial.print(millis());
-        Serial.print(tempC);
-        Serial.print("\t");
-      }
-    }
-    for (int i = 0;  i < deviceCount;  i++){
-      tempC = sensors.getTempCByIndex(i);
-    }
+    write_new_temperature();
   }
+
   
   E.tick();
-  jump_button.tick();
+//jump_button.tick();
   DDS.setfreq(freq, PHASE);
 
-  if (jump_button.isSingle()) { //нажата кнопка прыжка
-#ifdef DEBUG
-    Serial.println("start jumping");
-#endif
-    freq_jump();
-  }
+//if (jump_button.isSingle()) //нажата кнопка прыжка
+//  freq_jump();
 
-  if (E.isRight() && freq + freq_step <= MAX_FREQ) {//изменение частоты в большую сторону
+  if (E.isRight() && freq + step[freq_step] <= MAX_FREQ) {//изменение частоты в большую сторону
     freq += step[freq_step];
     freq_change();
     delay(F_DELAY);
   }
 
-  if (E.isLeft() && freq - freq_step >= MIN_FREQ) {//изменение частоты в меньшую сторону
+  if (E.isLeft() && freq - step[freq_step] >= MIN_FREQ) {//изменение частоты в меньшую сторону
     freq -= step[freq_step];
     freq_change();
     delay(F_DELAY);
@@ -220,13 +160,98 @@ void loop() {
     step_change_counter = 0;
 }
 
+
+void write_symbols(){
+  
+  for(int i = 0; i < 20; i++)
+    for(int j = 0; j < 4; j++){
+      lcd.setCursor(i, j);
+      lcd.print(" ");
+    }
+  
+  lcd.setCursor(0, 0);
+  
+  lcd.setCursor(0, 0);
+  lcd.print("FREQ: ");
+  lcd.setCursor(6, 0);
+  lcd.print(freq);
+
+  lcd.setCursor(0, 1);
+  lcd.print("STEP: ");
+  lcd.setCursor(6, 1);
+  lcd.print(freq_step);
+
+  lcd.setCursor(0, 2);
+  lcd.print("U = ");
+  lcd.setCursor(10, 2);
+  lcd.print("D = ");
+  lcd.setCursor(0, 3);
+  lcd.print("W = ");
+
+  for(int i = 0; i < 2; i++){
+    lcd.setCursor(i * 3 + 2 + 12, 3);
+    lcd.print(":");
+  }
+}
+
+
+void write_time(){
+  long tim[3];
+  tim[0] = last_time / 1000 / 60 / 60;
+  tim[1] = (last_time / 1000 / 60) % 60;
+  tim[2] = (last_time / 1000) % 60;
+  
+  for(int i = 0; i < 3; i++){
+    lcd.setCursor(i * 3 + 12, 3);
+    if(tim[i] / 10 == 0){
+      lcd.print(0);
+      lcd.setCursor(i*3 + 1 + 12, 3);  
+    }
+    lcd.print(tim[i]);
+  }
+}
+
+
+
+void write_new_temperature(){
+   
+  if(millis() - last_rewrite > REWRITE_SCREEN_TIME){
+    last_rewrite = millis();
+    write_symbols();
+  }  
+  // WRITE TEMPERATURE    
+  sensors.requestTemperatures();
+  for (int i = 0;  i < deviceCount;  i++){
+    tempC = sensors.getTempCByIndex(i);
+    if(i == 0)
+      lcd.setCursor(4, 3);  // водный
+    if(i == 1)
+      lcd.setCursor(4, 2); // верхний
+    if(i == 2)
+      lcd.setCursor(10 + 4, 2); // нижний
+      
+    if(tempC != -127.00)
+      lcd.print(tempC);
+       
+    else{
+      lcd.setCursor(19, 0);
+      lcd.print("X");
+    }
+    if(Serial){
+      Serial.print(millis());
+      Serial.print(tempC);
+      Serial.print("\t");
+    }
+  }
+}
+
 void freq_change() {
   lcd.setCursor(6, 0);
   lcd.print("          ");
   lcd.setCursor(6, 0);
   lcd.print(freq);
 
-  EEPROMWritelong(FREQ_ADR, freq);
+  EEPROMWritelong(FREQ_ADDR, freq);
 }
 
 void step_change()
@@ -235,6 +260,8 @@ void step_change()
   lcd.print("          ");
   lcd.setCursor(6, 1);
   lcd.print(step[freq_step]);
+
+  EEPROMWritelong(STEP_ADDR, freq_step);
 }
 
 long long EEPROMReadlong(long address) {
