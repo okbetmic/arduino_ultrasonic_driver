@@ -110,8 +110,8 @@ void loop() {
     if(temp_step == deviceCount)
       sensors.requestTemperatures();
     else 
-      write_new_temperature(temp_step);
-    temp_step = (temp_step + 1) % (deviceCount + 1);
+      write_new_temperature();
+    temp_step = (temp_step + 1) % 2;
   }
 
   
@@ -186,7 +186,7 @@ void write_symbols(){
   lcd.setCursor(0, 1);
   lcd.print("STEP: ");
   lcd.setCursor(6, 1);
-  lcd.print(freq_step);
+  lcd.print(step[freq_step]);
 
   lcd.setCursor(0, 2);
   lcd.print("U = ");
@@ -220,7 +220,7 @@ void write_time(){
 
 
 
-void write_new_temperature(int who){
+void write_new_temperature(){
    
   if(millis() - last_rewrite > REWRITE_SCREEN_TIME){
     last_rewrite = millis();
@@ -228,26 +228,27 @@ void write_new_temperature(int who){
   }  
   // WRITE TEMPERATURE    
   // sensors.requestTemperatures();
-  
-  tempC = sensors.getTempCByIndex(who);
-  if(who == 0)
-    lcd.setCursor(4, 3);  // водный
-  if(who == 1)
-    lcd.setCursor(4, 2); // верхний
-  if(who == 2)
-    lcd.setCursor(10 + 4, 2); // нижний
-    
-  if(tempC != -127.00)
-    lcd.print(tempC);
-     
-  else{
-    lcd.setCursor(19, 0);
-    lcd.print("X");
-  }
-  if(Serial){
-    Serial.print(millis());
-    Serial.print(tempC);
-    Serial.print("\t");
+  for(int who = 0; who < deviceCount; who++){
+    tempC = sensors.getTempCByIndex(who);
+    if(who == 0)
+      lcd.setCursor(4, 3);  // водный
+    if(who == 1)
+      lcd.setCursor(4, 2); // верхний
+    if(who == 2)
+      lcd.setCursor(10 + 4, 2); // нижний
+      
+    if(tempC != -127.00)
+      lcd.print(tempC);
+       
+    else{
+      lcd.setCursor(19, 0);
+      lcd.print("X");
+    }
+    if(Serial){
+      Serial.print(millis());
+      Serial.print(tempC);
+      Serial.print("\t");
+    }
   }
   
 }
