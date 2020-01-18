@@ -31,9 +31,9 @@
 
 #define ONE_WIRE_BUS 10 //температура
 
-#define MAX_STEP 11
+#define MAX_STEP 5
 #define MIN_STEP 0
-long step[MAX_STEP + 1] = {1, 5, 10, 50, 100, 300, 500, 1000, 2000, 3000, 5000, 10000}; //массив шагов
+long step[MAX_STEP + 1] = {1, 5, 10, 100, 1000, 10000}; //массив шагов
 
 #define STEP_CHANGE_CNT 2
 #define F_DELAY 0
