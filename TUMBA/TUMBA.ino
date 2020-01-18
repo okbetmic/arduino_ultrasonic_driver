@@ -78,6 +78,7 @@ void setup() {
   sensors.setResolution(12);
   sensors.setWaitForConversion(false); 
   deviceCount = sensors.getDeviceCount();
+  deviceCount = 3;
 
 
   if(Serial){
@@ -236,14 +237,17 @@ void write_new_temperature(){
       lcd.setCursor(4, 2); // верхний
     if(who == 1)
       lcd.setCursor(10 + 4, 2); // нижний
-      
-    if(tempC != -127.00)
-      lcd.print(tempC);
-       
-    else{
-      lcd.setCursor(19, 0);
-      lcd.print("X");
+    
+    if(tempC == 85.00 || tempC == -127.00){
+      lcd.print("     ");
+      if(who == 0) lcd.setCursor(4, 3);  // водный
+      if(who == 2) lcd.setCursor(4, 2); // верхний
+      if(who == 1) lcd.setCursor(10 + 4, 2); // нижний
+      lcd.print("d:[");
     }
+    else
+      lcd.print(tempC);
+
     if(Serial){
       Serial.print(millis());
       Serial.print(tempC);
