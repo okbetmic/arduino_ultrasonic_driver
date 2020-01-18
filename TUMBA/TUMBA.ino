@@ -107,7 +107,7 @@ void loop() {
 
   if(millis() - last_temp > TEMP_TIME){
     last_temp = millis();
-    if(temp_step == deviceCount)
+    if(temp_step == 0)
       sensors.requestTemperatures();
     else 
       write_new_temperature();
@@ -232,9 +232,9 @@ void write_new_temperature(){
     tempC = sensors.getTempCByIndex(who);
     if(who == 0)
       lcd.setCursor(4, 3);  // водный
-    if(who == 1)
-      lcd.setCursor(4, 2); // верхний
     if(who == 2)
+      lcd.setCursor(4, 2); // верхний
+    if(who == 1)
       lcd.setCursor(10 + 4, 2); // нижний
       
     if(tempC != -127.00)
