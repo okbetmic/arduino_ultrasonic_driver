@@ -43,8 +43,8 @@ long step[MAX_STEP + 1] = {1, 5, 10, 50, 100, 300, 500, 1000, 2000, 3000, 5000, 
 #define MAX_FREQ 1000000
 
 #define NEW_TIME 1000
-#define TEMP_TIME 3000
-#define REWRITE_SCREEN_TIME 10000
+#define TEMP_TIME 1000
+#define REWRITE_SCREEN_TIME 10000000
 
 //jump
 #define BUTTON_PIN 12
@@ -64,7 +64,7 @@ DallasTemperature sensors(&oneWire);
 long freq_step = 1;
 long freq = 0;
 long step_change_counter = 0;
-int deviceCount = 0;
+int deviceCount = 0, temp_step = 0;
 float tempC;
 unsigned long last_temp = 0, last_time = 0, last_rewrite = 0;
 
@@ -75,7 +75,10 @@ void setup() {
   DDS.begin(AD_W_CLK, AD_FQ_UD, AD_DATA_D7, RESET);
 
   sensors.begin();
+  sensors.setResolution(12);
+  sensors.setWaitForConversion(false); 
   deviceCount = sensors.getDeviceCount();
+
 
   if(Serial){
     Serial.print(deviceCount, DEC);
@@ -104,7 +107,11 @@ void loop() {
 
   if(millis() - last_temp > TEMP_TIME){
     last_temp = millis();
-    write_new_temperature();
+    if(temp_step == deviceCount)
+      sensors.requestTemperatures();
+    else 
+      write_new_temperature(temp_step);
+    temp_step = (temp_step + 1) % (deviceCount + 1);
   }
 
   
@@ -213,36 +220,36 @@ void write_time(){
 
 
 
-void write_new_temperature(){
+void write_new_temperature(int who){
    
   if(millis() - last_rewrite > REWRITE_SCREEN_TIME){
     last_rewrite = millis();
     write_symbols();
   }  
   // WRITE TEMPERATURE    
-  sensors.requestTemperatures();
-  for (int i = 0;  i < deviceCount;  i++){
-    tempC = sensors.getTempCByIndex(i);
-    if(i == 0)
-      lcd.setCursor(4, 3);  // водный
-    if(i == 1)
-      lcd.setCursor(4, 2); // верхний
-    if(i == 2)
-      lcd.setCursor(10 + 4, 2); // нижний
-      
-    if(tempC != -127.00)
-      lcd.print(tempC);
-       
-    else{
-      lcd.setCursor(19, 0);
-      lcd.print("X");
-    }
-    if(Serial){
-      Serial.print(millis());
-      Serial.print(tempC);
-      Serial.print("\t");
-    }
+  // sensors.requestTemperatures();
+  
+  tempC = sensors.getTempCByIndex(who);
+  if(who == 0)
+    lcd.setCursor(4, 3);  // водный
+  if(who == 1)
+    lcd.setCursor(4, 2); // верхний
+  if(who == 2)
+    lcd.setCursor(10 + 4, 2); // нижний
+    
+  if(tempC != -127.00)
+    lcd.print(tempC);
+     
+  else{
+    lcd.setCursor(19, 0);
+    lcd.print("X");
   }
+  if(Serial){
+    Serial.print(millis());
+    Serial.print(tempC);
+    Serial.print("\t");
+  }
+  
 }
 
 void freq_change() {
