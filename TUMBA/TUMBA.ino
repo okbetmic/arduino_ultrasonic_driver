@@ -76,12 +76,12 @@ void setup() {
 
   sensors.begin();
   sensors.setResolution(12);
-  sensors.setWaitForConversion(false); 
+  sensors.setWaitForConversion(false);
   deviceCount = sensors.getDeviceCount();
   deviceCount = 3;
 
 
-  if(Serial){
+  if (Serial) {
     Serial.print(deviceCount, DEC);
     Serial.println(" devices.");
     Serial.println("");
@@ -95,33 +95,33 @@ void setup() {
   lcd.clear();
 
   write_symbols();
-  
+
   DDS.setfreq(freq, PHASE);
 }
 
 void loop() {
-  
-  if(millis() - last_time > NEW_TIME){
+
+  if (millis() - last_time > NEW_TIME) {
     last_time = millis() - millis() % 1000;
     write_time();
   }
 
-  if(millis() - last_temp > TEMP_TIME){
+  if (millis() - last_temp > TEMP_TIME) {
     last_temp = millis();
-    if(temp_step == 0)
+    if (temp_step == 0)
       sensors.requestTemperatures();
-    else 
+    else
       write_new_temperature();
     temp_step = (temp_step + 1) % 2;
   }
 
-  
+
   E.tick();
-//jump_button.tick();
+  //jump_button.tick();
   DDS.setfreq(freq, PHASE);
 
-//if (jump_button.isSingle()) //нажата кнопка прыжка
-//  freq_jump();
+  //if (jump_button.isSingle()) //нажата кнопка прыжка
+  //  freq_jump();
 
   if (E.isRight() && freq + step[freq_step] <= MAX_FREQ) {//изменение частоты в большую сторону
     freq += step[freq_step];
@@ -169,16 +169,16 @@ void loop() {
 }
 
 
-void write_symbols(){
-  
-  for(int i = 0; i < 20; i++)
-    for(int j = 0; j < 4; j++){
+void write_symbols() {
+
+  for (int i = 0; i < 20; i++)
+    for (int j = 0; j < 4; j++) {
       lcd.setCursor(i, j);
       lcd.print(" ");
     }
-  
+
   lcd.setCursor(0, 0);
-  
+
   lcd.setCursor(0, 0);
   lcd.print("FREQ: ");
   lcd.setCursor(6, 0);
@@ -196,24 +196,24 @@ void write_symbols(){
   lcd.setCursor(0, 3);
   lcd.print("W = ");
 
-  for(int i = 0; i < 2; i++){
+  for (int i = 0; i < 2; i++) {
     lcd.setCursor(i * 3 + 2 + 12, 3);
     lcd.print(":");
   }
 }
 
 
-void write_time(){
+void write_time() {
   long tim[3];
   tim[0] = last_time / 1000 / 60 / 60;
   tim[1] = (last_time / 1000 / 60) % 60;
   tim[2] = (last_time / 1000) % 60;
-  
-  for(int i = 0; i < 3; i++){
+
+  for (int i = 0; i < 3; i++) {
     lcd.setCursor(i * 3 + 12, 3);
-    if(tim[i] / 10 == 0){
+    if (tim[i] / 10 == 0) {
       lcd.print(0);
-      lcd.setCursor(i*3 + 1 + 12, 3);  
+      lcd.setCursor(i * 3 + 1 + 12, 3);
     }
     lcd.print(tim[i]);
   }
@@ -221,40 +221,43 @@ void write_time(){
 
 
 
-void write_new_temperature(){
-   
-  if(millis() - last_rewrite > REWRITE_SCREEN_TIME){
+void write_new_temperature() {
+
+  if (millis() - last_rewrite > REWRITE_SCREEN_TIME) {
     last_rewrite = millis();
     write_symbols();
-  }  
-  // WRITE TEMPERATURE    
+  }
+  // WRITE TEMPERATURE
   // sensors.requestTemperatures();
-  for(int who = 0; who < deviceCount; who++){
+  for (int who = 0; who < deviceCount; who++) {
     tempC = sensors.getTempCByIndex(who);
-    if(who == 0)
+    if (who == 0)
       lcd.setCursor(4, 3);  // водный
-    if(who == 2)
+    if (who == 2)
       lcd.setCursor(4, 2); // верхний
-    if(who == 1)
+    if (who == 1)
       lcd.setCursor(10 + 4, 2); // нижний
-    
-    if(tempC == 85.00 || tempC == -127.00){
+
+    if (tempC == 85.00 || tempC == -127.00 || (tempC < 10 && tempC > 9)) {
       lcd.print("     ");
-      if(who == 0) lcd.setCursor(4, 3);  // водный
-      if(who == 2) lcd.setCursor(4, 2); // верхний
-      if(who == 1) lcd.setCursor(10 + 4, 2); // нижний
-      lcd.print("d:[");
+      if (who == 0) lcd.setCursor(4, 3); // водный
+      if (who == 2) lcd.setCursor(4, 2); // верхний
+      if (who == 1) lcd.setCursor(10 + 4, 2); // нижний
+      if(tempC == 85.00 || tempC == -127.00)
+        lcd.print("d:[");
+      else
+        lcd.print(tempC);
     }
     else
       lcd.print(tempC);
 
-    if(Serial){
+    if (Serial) {
       Serial.print(millis());
       Serial.print(tempC);
       Serial.print("\t");
     }
   }
-  
+
 }
 
 void freq_change() {
