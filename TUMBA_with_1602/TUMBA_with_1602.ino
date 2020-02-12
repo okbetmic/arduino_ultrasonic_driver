@@ -5,7 +5,7 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include "GyverEncoder.h"
-//#include "GyverButton.h"
+#include "GyverButton.h"
 
 //#define DEBUG
 
@@ -51,8 +51,8 @@ long step[MAX_STEP + 1] = {1, 5, 10, 100, 1000, 10000}; //массив шаго�
 //jump
 #define BUTTON_PIN 12
 #define DELTA_JUMP 0.001
-#define SCAN_DELAY 20*1e3 //microseconds
-#define JUMP_COUNT 100
+#define SCAN_DELAY 1e6 //microseconds
+#define JUMP_COUNT 500
 #define AD_DELAY 786.4 //microseconds
 
 
@@ -69,7 +69,7 @@ uint8_t temp_addr[3][8] = {
   {0x28, 0xFF, 0x6C, 0xF9, 0x53, 0x14, 0x01, 0x8C} //water
 };
 
-// GButton jump_button(BUTTON_PIN);
+ GButton jump_button(BUTTON_PIN);
 Encoder E(EN_CLK, EN_DT, EN_SW);
 LiquidCrystal_I2C lcd(I2C_ADR, symbolscount, stringscount);
 
@@ -130,11 +130,11 @@ void loop() {
 
 
   E.tick();
-  //jump_button.tick();
+  jump_button.tick();
   DDS.setfreq(freq, PHASE);
 
-  //if (jump_button.isSingle()) //нажата кнопка прыжка
-  //  freq_jump();
+  if (jump_button.isSingle()) //нажата кнопка прыжка
+    freq_jump();
 
   if(E.isClick()){ //Если двойное нажатие, то меняем экран 
     desktop++;
