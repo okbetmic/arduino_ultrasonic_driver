@@ -195,7 +195,7 @@ void freq_change(){
 }
 
 void step_change(){
-  if(desktop == 1)
+  if(desktop == 0)
     write_step();
 
   EEPROMWritelong(STEP_ADDR, freq_step);
