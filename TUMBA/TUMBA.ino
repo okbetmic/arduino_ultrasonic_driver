@@ -15,8 +15,8 @@
 
 //LCD pins
 #define I2C_ADR 0x27
-#define symbolscount 20
-#define stringscount 4
+#define symbolscount 16
+#define stringscount 2
 
 //DDS AD pins
 #define AD_W_CLK 8
@@ -83,8 +83,11 @@ unsigned long last_temp = 0, last_time = 0, last_rewrite = 0;
 
 void setup() {
   Serial.begin(9600);
-  freq = EEPROMReadlong(FREQ_ADDR);
-  freq_step = EEPROMReadlong(STEP_ADDR);
+  //freq = EEPROMReadlong(FREQ_ADDR);
+  //freq_step = EEPROMReadlong(STEP_ADDR);
+  freq = 30000;
+  freq_step = 1;
+  
   DDS.begin(AD_W_CLK, AD_FQ_UD, AD_DATA_D7, RESET);
 
   sensors.begin();
