@@ -85,6 +85,7 @@ void setup() {
   Serial.begin(9600);
   freq = EEPROMReadlong(FREQ_ADDR);
   freq_step = EEPROMReadlong(STEP_ADDR);
+  
   DDS.begin(AD_W_CLK, AD_FQ_UD, AD_DATA_D7, RESET);
 
   sensors.begin();
