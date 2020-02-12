@@ -124,6 +124,7 @@ void loop() {
       sensors.requestTemperatures();
     else
       write_new_temperature();
+     
     temp_step = !temp_step;
   }
 
@@ -243,7 +244,7 @@ void write_temperature_screen(){
   lcd.setCursor(8, 0);
   lcd.print("W:");
 
-  lcd.setCursor(8, 1);
+  lcd.setCursor(10, 1);
   lcd.print(":  :");
 
   write_new_temperature();
@@ -252,10 +253,13 @@ void write_temperature_screen(){
 
 
 void write_new_temperature(){
+  if(desktop != 1)
+    return;
+    
   for(int i = 0; i < 3; i++){
     lcd.setCursor(temp_cords[i][0], temp_cords[i][1]);
     tempC = sensors.getTempC(temp_addr[i]);
-    
+  
     if(tempC == 85.00 || tempC == -127.00 || (tempC < 10 && tempC > 9)) {
       lcd.print("     ");
       lcd.setCursor(temp_cords[i][0], temp_cords[i][1]);
@@ -275,6 +279,9 @@ void write_new_temperature(){
 }
 
 void write_time() {
+  if(desktop != 1)
+    return;
+  
   long tim[3];
   tim[0] = last_time / 1000 / 60 / 60;
   tim[1] = (last_time / 1000 / 60) % 60;
