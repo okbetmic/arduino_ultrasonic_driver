@@ -49,11 +49,10 @@ long step[MAX_STEP + 1] = {1, 5, 10, 100, 1000, 10000}; //массив шаго�
 #define REWRITE_SCREEN_TIME 10000000
 
 //jump
-#define BUTTON_PIN 12
-#define DELTA_JUMP 0.001
-#define SCAN_DELAY 1e6 //microseconds
-#define JUMP_COUNT 500
-#define AD_DELAY 786.4 //microseconds
+#define BUTTON_PIN 12 // кноп очка старта прыжка прыжочного
+#define SCAN_DELAY 1000000 //microseconds тобешь одна секунда -- время прыжочка
+#define JUMP_COUNT 10 // количество прыжков за операцию 
+#define AD_DELAY 800 //microseconds это скорость реакции АДэшки. на деле 786.4
 
 
 //temperature cordinates
@@ -329,29 +328,29 @@ void screen_clear(){
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 void freq_jump() {
-  int n = JUMP_COUNT;
-  long double count = SCAN_DELAY / (AD_DELAY * 2);
+  int n = JUMP_COUNT; // сколько раз прыгать будем, мистер 
+  long double count = SCAN_DELAY / AD_DELAY; // это у нас количество прыжков
+
+  screen_clear();
+  lcd.setCursor(0, 0);
+  lcd.print("JUMP ");
+  lcd.print(n);
+  lcd.print(" times");
+
+  lcd.setCursor(0, 1);
+  lcd.print("FROM ");
+  lcd.print(freq);
+  lcd.print(" TO ");
+  lcd.print(freq + step[freq_step]);
+
   while (n--) {
-#ifdef DEBUG
-    Serial.println(n);
-#endif
-    digitalWrite(13, 1);
-    digitalWrite(13, 0);
+    // идем от частоты, до частоты плюс данный шаг, со ступенькой в данный шаг / на количество изменений
     for (long double i = 0; i <= step[freq_step]; i += (long double)step[freq_step] / count) {
       DDS.setfreq(freq + i, PHASE);
       delayMicroseconds(AD_DELAY);
     }
   }
+
+  screen_write();
 }
