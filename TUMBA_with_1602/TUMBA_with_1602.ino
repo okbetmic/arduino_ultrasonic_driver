@@ -106,6 +106,9 @@ void setup() {
   sensors.setResolution(12);
   sensors.setWaitForConversion(false);
 
+  pinMode(13, OUTPUT);
+  digitalWrite(13, 1); //будем дергать в 0 когда начинаем снимать АЧХ
+
   if (Serial) {
     Serial.print(sensors.getDeviceCount(), DEC);
     Serial.println(" devices.");
@@ -358,23 +361,20 @@ void freq_jump() {
   lcd.print(" TO ");
   lcd.print(freq + step[freq_step]);
 
-  //синхроимпульс
-  digitalWrite(13, 1);
-  delay(100);
+  //тянет вниз, осциллограф ловит спад
   digitalWrite(13, 0);
-
+  
+  long ttt = micros();
   while (n--) {
     // идем от частоты, до частоты плюс данный шаг, со ступенькой в данный шаг / на количество изменений
-    for (long double i = 0; i <= step[freq_step]; i += (long double)step[freq_step] / count) {
-      Serial.println((int)i);
+    for (double i = 0; i < step[freq_step]; i += (step[freq_step] / count)) {
       DDS.setfreq(freq + i, PHASE);
-      delayMicroseconds(AD_DELAY);
+      delay(AD_DELAY*1e-3);
     }
   }
-  //второй СИ
+  Serial.println(micros() - ttt);
+  //второй СИ - просто индикация для пользователя
   digitalWrite(13, 1);
-  delay(100);
-  digitalWrite(13, 0);
 
   //Длинные синхроимпульсы помогут осциллографу поймать начало на большой развертке, а человеку понять где начало а где конец измерений
 
