@@ -272,9 +272,12 @@ void write_new_temperature(){
   if(desktop != 1)
     return;
     
+  Serial.print("\n");
   for(int i = 0; i < 3; i++){
     lcd.setCursor(temp_cords[i][0], temp_cords[i][1]);
     tempC = sensors.getTempC(temp_addr[i]);
+    Serial.print(tempC);
+    Serial.print("\t");
   
     if(tempC == 85.00 || tempC == -127.00 || (tempC < 10 && tempC > 9)) {
       lcd.print("     ");
