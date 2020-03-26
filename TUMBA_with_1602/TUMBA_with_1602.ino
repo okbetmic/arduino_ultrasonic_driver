@@ -273,13 +273,17 @@ void write_new_temperature(){
     return;
     
   Serial.print("\n");
+  if(Serial){
+      Serial.print(millis());
+      Serial.print("\t");
+    }
   for(int i = 0; i < 3; i++){
     lcd.setCursor(temp_cords[i][0], temp_cords[i][1]);
     tempC = sensors.getTempC(temp_addr[i]);
     Serial.print(tempC);
     Serial.print("\t");
   
-    if(tempC == 85.00 || tempC == -127.00 || (tempC < 10 && tempC > 9)) {
+    if(tempC == 85.00 || tempC == -127.00 || (tempC < 10 && tempC > 9) ) {
       lcd.print("     ");
       lcd.setCursor(temp_cords[i][0], temp_cords[i][1]);
     }
@@ -288,12 +292,6 @@ void write_new_temperature(){
       lcd.print("d:[");
     else
       lcd.print(tempC);
-
-    if(Serial){
-      Serial.print(millis());
-      Serial.print(tempC);
-      Serial.print("\t");
-    }
   }
 }
 
