@@ -5,9 +5,14 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include "GyverEncoder.h"
-#include "GyverButton.h"
 
-//#define DEBUG
+#define DEBUG
+
+#ifdef DEBUG
+  #define DEBUG_PRINT(x) Serial.print(x);
+#else
+  #define DEBUG_PRINT(x)
+#endif
 
 //EEPROM
 #define FREQ_ADDR 0
@@ -31,11 +36,12 @@ int desktop = 0;
 #define EN_DT 3
 #define EN_SW 4
 
-#define ONE_WIRE_BUS 10 //температура
+#define ONE_WIRE_BUS 10 //DS18B20 pins
 
-#define MAX_STEP 5
+
+long step[] = {1, 5, 10, 100, 1000, 10000}; //freq steps array
 #define MIN_STEP 0
-long step[MAX_STEP + 1] = {1, 5, 10, 100, 1000, 10000}; //массив шагов
+#define MAX_STEP sizeof(step)/sizeof(step[MIN_STEP])
 
 #define STEP_CHANGE_CNT 2
 #define F_DELAY 0
@@ -47,27 +53,6 @@ long step[MAX_STEP + 1] = {1, 5, 10, 100, 1000, 10000}; //массив шаго�
 #define NEW_TIME 1000
 #define TEMP_TIME 1000
 #define REWRITE_SCREEN_TIME 10000000
-
-//jump
-#define BUTTON_PIN 12 // кноп очка старта прыжка прыжочного
-
-#define JUMP_COUNT 1 // количество прыжков за операцию (уже ясно что для цифрового осциллографа тут стоит 1)
-/*
- * на перестройку адэшке нужно 786.4 мкс
- * но вопрос не в этом, а во времени релаксации измеряемой системы. Можно примерно прикинуть как R / L (с округлением вверх)
- * Минимальный период будет на 20 кГц - 50 мс. Это значение и возьмем.
- * В качестве времени между двумя шагами надо брать значение побольше так как:
- *  1) как минимум, не попасть на переходные процессы
- *  2) пройти достаточно периодов колебаний, чтобы огибающая прошла по локальным максимумам
- */
-#define AD_DELAY 50000 //microseconds
-/*
- * Если снимать АЧХ кусками по 10 кгц с шагом 10 герц, то надо делать 1000 измерений.
- * 1000 * 50мс = 50 секунд на измерение. Мда.. многовато. Не знаю, хватит ли у осциллографа памяти хранить столько гигасэмплов
- * (и уловит ли он на такой развертке синхроимпульс (..хотя на такой длительности можно и руками кнопку нажать..))
- * Посмотрел, минимальная развертка у осциллографа 40 секунд. Вполне. Щас попробуем сделать всё красиво.
- */
-#define SCAN_DELAY 50000000 //microseconds - время ПОЛНОГО измерения
 
 //temperature cordinates
 int temp_cords[3][2] = {
@@ -82,8 +67,7 @@ uint8_t temp_addr[3][8] = {
   {0x28, 0xFF, 0x6C, 0xF9, 0x53, 0x14, 0x01, 0x8C} //water
 };
 
- GButton jump_button(BUTTON_PIN);
-Encoder E(EN_CLK, EN_DT, EN_SW);
+Encoder E(EN_CLK, EN_DT, EN_SW, TYPE2);
 LiquidCrystal_I2C lcd(I2C_ADR, symbolscount, stringscount);
 
 OneWire oneWire(ONE_WIRE_BUS);
@@ -97,7 +81,11 @@ float tempC;
 unsigned long last_temp = 0, last_time = 0, last_rewrite = 0;
 
 void setup() {
-  Serial.begin(9600);
+  
+  #ifdef DEBUG
+    Serial.begin(9600);
+  #endif
+
   freq = EEPROMReadlong(FREQ_ADDR);
   freq_step = EEPROMReadlong(STEP_ADDR);
   DDS.begin(AD_W_CLK, AD_FQ_UD, AD_DATA_D7, RESET);
@@ -106,19 +94,11 @@ void setup() {
   sensors.setResolution(12);
   sensors.setWaitForConversion(false);
 
-  pinMode(13, OUTPUT);
-  digitalWrite(13, 1); //будем дергать в 0 когда начинаем снимать АЧХ
-
-  if (Serial) {
-    Serial.print(sensors.getDeviceCount(), DEC);
-    Serial.println(" devices.");
-    Serial.println("");
-
-    Serial.println("millis\texternal\tinternal_top\tinternal_bottom");
-  }
-
-  E.setType(TYPE1);
-
+  DEBUG_PRINT(sensors.getDeviceCount());
+  DEBUG_PRINT(" devices.");
+  DEBUG_PRINT("");
+  DEBUG_PRINT("millis\tinternal_top\tinternal_bottom\twater");
+    
   lcd.begin();
   lcd.clear();
 
@@ -146,12 +126,8 @@ void loop() {
 
 
   E.tick();
-  jump_button.tick();
   DDS.setfreq(freq, PHASE);
-
-  if (jump_button.isSingle()) //нажата кнопка прыжка
-    freq_jump();
-
+  
   if(E.isClick()){ //Если двойное нажатие, то меняем экран 
     desktop++;
     desktop%= desk_size;
@@ -272,16 +248,15 @@ void write_new_temperature(){
   if(desktop != 1)
     return;
     
-  Serial.print("\n");
-  if(Serial){
-      Serial.print(millis());
-      Serial.print("\t");
-    }
+  DEBUG_PRINT("\n")
+  DEBUG_PRINT(millis())
+  DEBUG_PRINT("\t")
+  
   for(int i = 0; i < 3; i++){
     lcd.setCursor(temp_cords[i][0], temp_cords[i][1]);
     tempC = sensors.getTempC(temp_addr[i]);
-    Serial.print(tempC);
-    Serial.print("\t");
+    DEBUG_PRINT(tempC)
+    DEBUG_PRINT("\t")
   
     if(tempC == 85.00 || tempC == -127.00 || (tempC < 10 && tempC > 9) ) {
       lcd.print("     ");
@@ -342,42 +317,4 @@ void screen_clear(){
     for(int j = 0; j < symbolscount; j++)
       lcd.print(" ");
   }
-}
-
-
-
-void freq_jump() {
-  int n = JUMP_COUNT; // сколько раз прыгать будем, мистер 
-  long double count = SCAN_DELAY / AD_DELAY; // это у нас количество прыжков
-  Serial.println((int)count);
-  screen_clear();
-  lcd.setCursor(0, 0);
-  lcd.print("JUMP ");
-  lcd.print(n);
-  lcd.print(" times");
-
-  lcd.setCursor(0, 1);
-  lcd.print("FROM ");
-  lcd.print(freq);
-  lcd.print(" TO ");
-  lcd.print(freq + step[freq_step]);
-
-  //тянет вниз, осциллограф ловит спад
-  digitalWrite(13, 0);
-  
-  long ttt = micros();
-  while (n--) {
-    // идем от частоты, до частоты плюс данный шаг, со ступенькой в данный шаг / на количество изменений
-    for (double i = 0; i < step[freq_step]; i += (step[freq_step] / count)) {
-      DDS.setfreq(freq + i, PHASE);
-      delay(AD_DELAY*1e-3);
-    }
-  }
-  Serial.println(micros() - ttt);
-  //второй СИ - просто индикация для пользователя
-  digitalWrite(13, 1);
-
-  //Длинные синхроимпульсы помогут осциллографу поймать начало на большой развертке, а человеку понять где начало а где конец измерений
-
-  screen_write();
-}                      
+}                
