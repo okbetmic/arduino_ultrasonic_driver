@@ -19,11 +19,11 @@
 #define STEP_ADDR 4
 
 //LCD pins
-#define I2C_ADR 0x27
+#define I2C_ADR 0x38
 #define symbolscount 16
 #define stringscount 2
 #define desk_size 2
-int desktop = 0;
+byte desktop = 1;
 
 //DDS AD pins
 #define AD_W_CLK 8
